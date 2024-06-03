@@ -1,0 +1,34 @@
+import open3d as o3d
+import numpy as np
+import matplotlib.pyplot as plt
+def load_point_cloud_from_txt(file_path):
+    points = np.loadtxt(file_path)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    return pcd
+def extract_planes(pcd, distance_threshold=0.02, ransac_n=3, num_iterations=1000):
+    plane_model, inliers = pcd.segment_plane(distance_threshold=distance_threshold,
+                                             ransac_n=ransac_n,
+                                             num_iterations=num_iterations)
+    [a, b, c, d] = plane_model
+    inlier_cloud = pcd.select_by_index(inliers)
+    outlier_cloud = pcd.select_by_index(inliers, invert=True)
+    return inlier_cloud, outlier_cloud, plane_model
+def project_to_2d(pcd):
+    points = np.asarray(pcd.points)
+    projected_points = points[:, :2]  # Drop the z-coordinate
+    return projected_points
+def plot_floor_plan(points):
+    plt.scatter(points[:, 0], points[:, 1], s=1)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('2D Floor Plan')
+    plt.show()
+pcd = load_point_cloud_from_txt('example.txt')
+plane, remaining_pcd, model = extract_planes(pcd)
+projected_points = project_to_2d(plane)
+plot_floor_plan(projected_points)
+pcd = load_point_cloud_from_txt('example1.txt')
+plane, remaining_pcd, model = extract_planes(pcd)
+projected_points = project_to_2d(plane)
+plot_floor_plan(projected_points)
